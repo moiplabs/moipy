@@ -1,0 +1,1 @@
+from moip import MoIP
