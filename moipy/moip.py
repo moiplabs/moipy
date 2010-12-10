@@ -63,7 +63,7 @@ class MoIP:
         _razao.text = razao
         return self
      
-    def set_valor(self, valor): 
+    def set_valor(self, valor):
         valor = str(valor)
 
         instrucao_unica = self.enviar_instrucao[0]
@@ -76,6 +76,10 @@ class MoIP:
     def get_xml(self):
         """
         Retorna o XML gerado até agora
+
+        >>> m = MoIP() # doctest: +ELLIPSIS 
+        >>> m.get_xml()
+        '<EnviarInstrucao><InstrucaoUnica/></EnviarInstrucao>'
         """
         return etree.tostring(self.enviar_instrucao)
 
@@ -104,6 +108,20 @@ class MoIP:
         return self
     
     def set_ambiente(self,ambiente):
+        """
+        Configura o ambiente (Produção ou Sandbox)
+        
+        >>> m = MoIP()
+        >>> m.set_ambiente('sandbox') # doctest: +ELLIPSIS 
+        <__main__.MoIP instance at 0x...>
+        >>> m.url
+        'https://desenvolvedor.moip.com.br/sandbox/ws/alpha/EnviarInstrucao/Unica'
+        >>> m.set_ambiente('producao') # doctest: +ELLIPSIS 
+        <__main__.MoIP instance at 0x...>
+        >>> m.url
+        'https://www.moip.com.br/ws/alpha/EnviarInstrucao/Unica'
+
+        """
         if ambiente=="sandbox":
             self.url = "https://desenvolvedor.moip.com.br/sandbox/ws/alpha/EnviarInstrucao/Unica"
         elif ambiente=="producao":
