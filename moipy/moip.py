@@ -3,30 +3,75 @@ from lxml import etree
 import pycurl
 import os
 
-
 class MoIP:
     """
     Classe para montar o XML de instrucoes
+
+    Exemplo de uso:
+    
+    >>> moip = MoIP()
+    >>> moip.set_credenciais(token='meu_token',key='minha_key')   # doctest: +ELLIPSIS 
+    <__main__.MoIP instance at 0x...>
+    >>> moip.set_razao('Razao do pagamento') # doctest: +ELLIPSIS
+    <__main__.MoIP instance at 0x...>
+    >>> moip.set_valor('12345') # doctest: +ELLIPSIS
+    <__main__.MoIP instance at 0x...>
+    
+    Lembrando que o valor deve ser especificado em centavos. Portanto,
+    R$ 123,45 = 12345
+    
+    O MoIPy implementa o padrão 'Fluent Interfaces', por isso a instância do
+    objeto MoIP é retornada a cada chamada de método
     """
 
     #url do sandbox
     url = "https://desenvolvedor.moip.com.br/sandbox/ws/alpha/EnviarInstrucao/Unica"
 
 
-    def __init__(self,razao,valor):
+    def __init__(self):
         """
-        Inicializa o objeto MoIP com os valores obrigatorios
+        Inicializa o objeto MoIP.
+        >>> m = MoIP()
+        >>> type(m.enviar_instrucao)
+        <type 'lxml.etree._Element'>
+        >>> type(m.enviar_instrucao[0])
+        <type 'lxml.etree._Element'>
+
         """
         enviar_instrucao = etree.Element("EnviarInstrucao")
         instrucao_unica = etree.SubElement(enviar_instrucao,"InstrucaoUnica")
-        _razao = etree.SubElement(instrucao_unica,"Razao")
-        _razao.text = razao
-        valores = etree.SubElement(instrucao_unica,"Valores")
-        _valor = etree.SubElement(valores,"Valor",moeda="BRL")
-        _valor.text = valor
-
         self.enviar_instrucao = enviar_instrucao 
         
+
+    def set_razao(self, razao):
+        """
+        Exemplo de uso:
+
+        >>> m = MoIP()
+        >>> m.set_razao('Razao do Pagamento') # doctest: +ELLIPSIS
+        <__main__.MoIP instance at 0x...>
+
+        No final, o nó 'Razão' será adicionado:
+
+        >>> m.enviar_instrucao.xpath('//Razao')[0].text
+        'Razao do Pagamento'
+
+        """
+        instrucao_unica = self.enviar_instrucao[0]
+ 
+        _razao = etree.SubElement(instrucao_unica,"Razao")
+        _razao.text = razao
+        return self
+     
+    def set_valor(self, valor): 
+        valor = str(valor)
+
+        instrucao_unica = self.enviar_instrucao[0]
+
+        valores = etree.SubElement(instrucao_unica,"Valores")
+        _valor = etree.SubElement(valores,"Valor",moeda="BRL")
+        _valor.text = valor 
+        return self
 
     def get_xml(self):
         """
@@ -89,11 +134,11 @@ class MoIP:
     def set_credenciais(self,token,key):
         self.token = token
         self.key = key
+        return self
 
     def get_resposta(self):
         resposta = etree.XML(self.retorno)
-        return {'sucesso':resposta[0][1].text,'token':resposta[0][2].text}
-
+        return {'sucesso':resposta[0][1].text,'token':resposta[0][2].text} 
 
 class RespostaMoIP:
     def __init__(self):
@@ -101,3 +146,8 @@ class RespostaMoIP:
 
     def callback(self,buf):
         self.conteudo = buf        
+
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod(report=True,verbose=True)
