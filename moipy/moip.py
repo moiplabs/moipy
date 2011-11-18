@@ -1,7 +1,10 @@
-#*-* encoding:utf-8 *-*
-from lxml import etree
-import pycurl
+# -*- coding: utf-8 -*-
+import base64
 import os
+import pycurl
+
+from lxml import etree
+
 
 class MoIP:
     """
@@ -135,7 +138,8 @@ class MoIP:
         passwd = self.token+":"+self.key
 
         passwd64 = base64.b64encode(passwd)
-
+        
+        c = pycurl.Curl()
         c.setopt(pycurl.URL,self.url)
         c.setopt(pycurl.HTTPHEADER,["Authorization: Basic "+passwd64])
         c.setopt(pycurl.USERAGENT,"Mozilla/4.0")
@@ -157,6 +161,7 @@ class MoIP:
     def get_resposta(self):
         resposta = etree.XML(self.retorno)
         return {'sucesso':resposta[0][1].text,'token':resposta[0][2].text} 
+
 
 class RespostaMoIP:
     def __init__(self):
