@@ -1,1 +1,1 @@
-from moip import MoIP
+from moip import Moip

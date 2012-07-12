@@ -2,11 +2,13 @@
 
 from distutils.core import setup
 
-setup(name='MoIPy',
-      version='0.1',
+setup(name='Moipy',
+      version='0.2',
       description='Python integration with MoIP payment gateway via API',
       author='Herberth Amaral',
+      author='Ale Borba',
       author_email='herberthamaral@gmail.com',
+      author_email='ale.alvesborba@gmail.com',
       url='http://labs.moip.com.br/',
       packages=['moipy'],
       classifiers=[
