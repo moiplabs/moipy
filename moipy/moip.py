@@ -1,164 +1,121 @@
+#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 import base64
-import os
 import pycurl
 
 from lxml import etree
 
 
-class MoIP:
-    """
-    Classe para montar o XML de instrucoes
+class Moip():
 
-    Exemplo de uso:
-    
-    >>> moip = MoIP()
-    >>> moip.set_credenciais(token='meu_token',key='minha_key')   # doctest: +ELLIPSIS 
-    <__main__.MoIP instance at 0x...>
-    >>> moip.set_razao('Razao do pagamento') # doctest: +ELLIPSIS
-    <__main__.MoIP instance at 0x...>
-    >>> moip.set_valor('12345') # doctest: +ELLIPSIS
-    <__main__.MoIP instance at 0x...>
-    
-    Lembrando que o valor deve ser especificado em centavos. Portanto,
-    R$ 123,45 = 12345
-    
-    O MoIPy implementa o padrão 'Fluent Interfaces', por isso a instância do
-    objeto MoIP é retornada a cada chamada de método
-    """
-
-    #url do sandbox
-    url = "https://desenvolvedor.moip.com.br/sandbox/ws/alpha/EnviarInstrucao/Unica"
-
-
-    def __init__(self):
-        """
-        Inicializa o objeto MoIP.
-        >>> m = MoIP()
-        >>> type(m.enviar_instrucao)
-        <type 'lxml.etree._Element'>
-        >>> type(m.enviar_instrucao[0])
-        <type 'lxml.etree._Element'>
-
-        """
-        enviar_instrucao = etree.Element("EnviarInstrucao")
-        instrucao_unica = etree.SubElement(enviar_instrucao,"InstrucaoUnica")
-        self.enviar_instrucao = enviar_instrucao 
+    def __init__(self, razao, xml_node = "EnviarInstrucao"):
         
+        if xml_node:
+            self.xml_node = etree.Element(xml_node)
+            
+            self._monta_xml(self.xml_node, unique = True, InstrucaoUnica = dict(Razao=razao))
+            
+            
+    def _monta_xml(self, parent, unique=False, **kwargs):
+        """Metodo interno que monta o XML utilizando os parametros passados
+        por outros metodos."""
+        
+        if isinstance(parent, etree._Element):
+            node_parent = parent
+        else:
+            node_parent = etree.Element(parent)
+        
+        for k,v in kwargs.items():
+            if unique and node_parent.find(k) is not None:
+                node = node_parent.find(k) 
+            else:
+                node = etree.SubElement(node_parent, k)
+               
+            if isinstance(v, dict):
+                self._monta_xml(node, **v)
+            else:
+                node.text = v
+                
+        return node_parent
 
-    def set_razao(self, razao):
-        """
-        Exemplo de uso:
 
-        >>> m = MoIP()
-        >>> m.set_razao('Razao do Pagamento') # doctest: +ELLIPSIS
-        <__main__.MoIP instance at 0x...>
-
-        No final, o nó 'Razão' será adicionado:
-
-        >>> m.enviar_instrucao.xpath('//Razao')[0].text
-        'Razao do Pagamento'
-
-        """
-        instrucao_unica = self.enviar_instrucao[0]
- 
-        _razao = etree.SubElement(instrucao_unica,"Razao")
-        _razao.text = razao
-        return self
-     
-    def set_valor(self, valor):
-        valor = str(valor)
-
-        instrucao_unica = self.enviar_instrucao[0]
-
-        valores = etree.SubElement(instrucao_unica,"Valores")
-        _valor = etree.SubElement(valores,"Valor",moeda="BRL")
-        _valor.text = valor 
-        return self
-
-    def get_xml(self):
-        """
-        Retorna o XML gerado até agora
-
-        >>> m = MoIP() # doctest: +ELLIPSIS 
-        >>> m.get_xml()
-        '<EnviarInstrucao><InstrucaoUnica/></EnviarInstrucao>'
-        """
-        return etree.tostring(self.enviar_instrucao)
-
-    def set_id_proprio(self,id):
-        instrucao_unica = self.enviar_instrucao[0]
-        id_proprio = etree.SubElement(instrucao_unica,"IdProprio")
-        id_proprio.text = id
-        return self
-
-    def set_data_vencimento(self,data):
-        instrucao_unica = self.enviar_instrucao[0]
-        data_vencimento = etree.SubElement(instrucao_unica,"DataVencimento")
-        data_vencimento.text = data
-        return self
-
-    def set_recebedor(self,login_moip,email,apelido):
-        instrucao_unica = self.enviar_instrucao[0]
-        recebedor = etree.SubElement(instrucao_unica,"Recebedor")
-        _login_moip = etree.SubElement(recebedor,"LoginMoip")
-        _login_moip.text = login_moip
-        _email = etree.SubElement(recebedor,"Email")
-        _email.text = email
-        _apelido = etree.SubElement(recebedor,"Apelido")
-        _apelido.text = apelido
-
+    def set_credenciais(self, token, key):
+        
+        self.token = token
+        self.key = key
+        
         return self
     
+
     def set_ambiente(self,ambiente):
-        """
-        Configura o ambiente (Produção ou Sandbox)
-        
-        >>> m = MoIP()
-        >>> m.set_ambiente('sandbox') # doctest: +ELLIPSIS 
-        <__main__.MoIP instance at 0x...>
-        >>> m.url
-        'https://desenvolvedor.moip.com.br/sandbox/ws/alpha/EnviarInstrucao/Unica'
-        >>> m.set_ambiente('producao') # doctest: +ELLIPSIS 
-        <__main__.MoIP instance at 0x...>
-        >>> m.url
-        'https://www.moip.com.br/ws/alpha/EnviarInstrucao/Unica'
 
-        """
         if ambiente=="sandbox":
             self.url = "https://desenvolvedor.moip.com.br/sandbox/ws/alpha/EnviarInstrucao/Unica"
         elif ambiente=="producao":
             self.url = "https://www.moip.com.br/ws/alpha/EnviarInstrucao/Unica"
-
+        else:
+            raise ValueError("Ambiente inválido")
+        
+     
+    def set_valor(self, valor):
+        
+        self._monta_xml(self.xml_node, unique=True, InstrucaoUnica=dict(Valores=dict(Valor=valor)))
+        
         return self
 
-    def envia(self):
-        r = RespostaMoIP()
+
+    def set_id_proprio(self, id):
         
-        passwd = self.token+":"+self.key
+        self._monta_xml(self.xml_node, unique=True, InstrucaoUnica=dict(IdProprio=id))
+        
+        return self
+
+
+    def set_data_vencimento(self,data):
+        
+        self._monta_xml(self.xml_node, unique=True, InstrucaoUnica=dict(DataVencimento=data))
+        
+        return self
+
+
+    def set_recebedor(self,login_moip,email,apelido):
+        
+        self._monta_xml(self.xml_node, unique=True, InstrucaoUnica=dict(Recebedor=dict(LoginMoip=login_moip, Email=email, Apelido=apelido)))
+
+        return self
+    
+
+    def envia(self):
+        resposta = RespostaMoIP()
+        
+        passwd = self.token + ":" + self.key
 
         passwd64 = base64.b64encode(passwd)
         
-        c = pycurl.Curl()
-        c.setopt(pycurl.URL,self.url)
-        c.setopt(pycurl.HTTPHEADER,["Authorization: Basic "+passwd64])
-        c.setopt(pycurl.USERAGENT,"Mozilla/4.0")
-        c.setopt(pycurl.USERPWD,passwd)
-        c.setopt(pycurl.POST,True)
-        c.setopt(pycurl.POSTFIELDS,self.get_xml())
-        c.setopt(pycurl.WRITEFUNCTION,r.callback)
-        c.perform()
-        c.close()
+        curl = pycurl.Curl()
+        curl.setopt(pycurl.URL,self.url)
+        curl.setopt(pycurl.HTTPHEADER,["Authorization: Basic " + passwd64])
+        curl.setopt(pycurl.USERAGENT,"Mozilla/4.0")
+        curl.setopt(pycurl.USERPWD,passwd)
+        curl.setopt(pycurl.POST,True)
+        curl.setopt(pycurl.POSTFIELDS,self._get_xml())
+        curl.setopt(pycurl.WRITEFUNCTION,resposta.callback)
+        curl.perform()
+        curl.close()
          
-        self.retorno = r.conteudo
+        self.retorno = resposta.conteudo
+
         return self
 
-    def set_credenciais(self,token,key):
-        self.token = token
-        self.key = key
-        return self
+
+    def _get_xml(self):
+        """Metodo interno que retorna o objeto etree em formato string"""
+        
+        return etree.tostring(self.xml_node)
+    
 
     def get_resposta(self):
+        
         resposta = etree.XML(self.retorno)
         return {'sucesso':resposta[0][1].text,'token':resposta[0][2].text} 
 
@@ -167,10 +124,6 @@ class RespostaMoIP:
     def __init__(self):
         self.conteudo = ''
 
+
     def callback(self,buf):
         self.conteudo = buf        
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod(report=True,verbose=True)

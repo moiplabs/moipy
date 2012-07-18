@@ -3,6 +3,12 @@ MoIPy
 
 Camada de abstração para integração via API com o MoIP em Python.
 
+ - Author: Hebert Amaral
+ - Contributor: Ale Borba
+ - Contributor: Igor Hercowitz
+ 
+ - Version: v0.2
+
 Dependências
 ------------
 
@@ -33,16 +39,34 @@ Basta importar a classe do MoIP e sair brincando :-)
 
     from moipy import MoIP
 
-    moip = MoIP()
+    moip = MoIP('Razao do Pagamento')
 
     moip.set_credenciais(token='seu_token',key='sua_key')
-    moip.set_razao('Razao do Pagmento')
-    moip.set_ambiente('sandbox') # sandbox é o default
-    moip.set_valor(12345)
-    moip.set_id_proprio('abc123-')
+    moip.set_ambiente('sandbox')
+    moip.set_valor('12345')
+    moip.set_data_vencimento('yyyy-mm-dd')
+    moip.set_id_proprio('abc123')
     moip.envia()
+    
     print moip.get_resposta() # {sucesso:'Sucesso','token':'KJHSDASKD392847293AHFJKDSAH'}
 
+ChangeLog
+----------
+
+ v0.2
+  - Refatorações de código
+  - Retirada dos DocTests
+
+ v0.1
+  - First version
+
+ToDo
+------
+ 
+ - Aplicar testes automatizados usando unittest
+ - Incluir dados do pagador
+ - Validar campos
+ 
 
 Licença
 ------
